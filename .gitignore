@@ -1,4 +1,2 @@
 **/.DS_Store
 /jmeter
-/influxdb2/config/*
-/influxdb2/data/*
