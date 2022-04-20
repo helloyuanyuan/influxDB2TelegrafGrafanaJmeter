@@ -1,0 +1,74 @@
+version: '3.5'
+
+services:
+
+  influxdb2:
+    restart: always
+    image: influxdb:latest
+    container_name: influxdb2
+    hostname: influxdb2
+    networks:
+      - DemoNetwork
+    ports:
+      - "8086:8086"
+    volumes:
+      - type: bind
+        source: ./influxdb2/data
+        target: /var/lib/influxdb2
+      - type: bind
+        source: ./influxdb2/config
+        target: /etc/influxdb2
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=admin123
+      - DOCKER_INFLUXDB_INIT_ORG=DemoOrg
+      - DOCKER_INFLUXDB_INIT_BUCKET=DemoBucket
+
+  telegraf:
+    restart: always
+    image: telegraf:latest
+    container_name: telegraf
+    hostname: telegraf
+    networks:
+      - DemoNetwork
+    ports:
+      - "8092:8092"
+      - "8094:8094"
+      - "8125:8125"
+    pid: "host"
+    user: telegraf:1001
+    volumes:
+      - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /etc:/host/etc:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /var:/host/var:ro
+      - /run:/host/run:ro
+    environment:
+      - HOST_ETC=/host/etc
+      - HOST_PROC=/host/proc
+      - HOST_SYS=/host/sys
+      - HOST_VAR=/host/var
+      - HOST_RUN=/host/run
+    depends_on:
+      - influxdb2
+
+  grafana:
+    restart: always
+    image: grafana/grafana:latest
+    container_name: grafana
+    hostname: grafana
+    networks:
+      - DemoNetwork
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - influxdb2
+
+networks:
+  DemoNetwork:
